@@ -1,8 +1,8 @@
 /********************************************************************************
  * 45 --> E ~~~~~~ 4c --> L ~~~~~~ 46 --> F
- * 
- *             hypothetical layout
- *             +-----------------+
+ 
+              hypothetical layout
+              +-----------------+
          +----| ELF File Header |----+
          |    +-----------------+    |
          v                           v
@@ -16,24 +16,36 @@
       +--> | Contents (Byte Stream) |<--+
            +------------------------+
  
+
+              hypothetical layout
+              +-----------------+
+              | ELF File Header |
+              +-----------------+ 
+              +-----------------+
+              | program header  | 
+              |     table       |
+              +-----------------+ 
+              +-----------------+
+              |     .text       |
+              +-----------------+ 
+              +-----------------+
+              |     .rodata     |
+              +-----------------+ 
+              +-----------------+
+              | section header  | 
+              |     table       |
+              +-----------------+ 
  
  * ///////////////////////////////////////////////////////////////////////////////
  * 
- * Class:           64 bit architecture
- * Data:            Least Significant Bit (LSB or little endian)
- * ABI:             application binary interface 
- * Type:            this is REL, others are DYN (shared object file) or EXEC
- * 
-    $ hexdump -C -n 64 /bin/ps
-    00000000  7f 45 4c 46 02 01 01 00  00 00 00 00 00 00 00 00  |.ELF............|
-    00000010  02 00 3e 00 01 00 00 00  a8 2b 40 00 00 00 00 00  |..>......+@.....|
-    00000020  40 00 00 00 00 00 00 00  30 65 01 00 00 00 00 00  |@.......0e......|
-    00000030  00 00 00 00 40 00 38 00  09 00 40 00 1c 00 1b 00  |....@.8...@.....|
- * 
- * ///////////////////////////////////////////////////////////////////////////////
- * 
- *
- * Section Headers: post gcc linkage 
+ * Class:                   64 bit architecture
+ * Data:                    Least Significant Bit (LSB or little endian)
+ * ABI:                     application binary interface 
+ * Type:                    this is REL, others are DYN (shared object file) or EXEC
+ * Entry point address:     location of first part to be executed at runtime
+
+
+ * Section Headers: post gcc linkage [gcc -o hello hello.c] 
  *      .interp                         holding pathname of interpreter 
  *      .gnu.hash                       dynamic hash table
  *      .dynsym                         imported/exported symbol table
@@ -41,33 +53,43 @@
  *      .init, .plt, .fini              code sections
  *      .text                           code
  *      .rela.text, .rela               relocation tables
- *      .data, .bss, .rodata            data sections
+ *      .data, .bss, .rodata            data sections (ro = read only)
  *      .got, .dynamic, .plt            dynamic binaries 
  *      .comment                        extra, misc.
  *      .symtab                         symbol tables
  *      .shstrtab                       section string tables (name of each section)
  *      .strtab                         string tables
- * 
- * Jumps: readelf -r hello (patching offset for printf at 000000600ff8)
- * 
-        Relocation section '.rela.dyn' at offset 0x380 contains 1 entries:
-        Offset          Info           Type           Sym. Value    Sym. Name + Addend
-        000000600ff8  000300000006 R_X86_64_GLOB_DAT 0000000000000000 __gmon_start__ + 0
 
-        Relocation section '.rela.plt' at offset 0x398 contains 3 entries:
-        Offset          Info           Type           Sym. Value    Sym. Name + Addend
-        000000601018  000100000007 R_X86_64_JUMP_SLO 0000000000000000 printf + 0
-        000000601020  000200000007 R_X86_64_JUMP_SLO 0000000000000000 __libc_start_main + 0
-        000000601028  000300000007 R_X86_64_JUMP_SLO 0000000000000000 __gmon_start__ + 0
+ * Definitions:
+ * - linking: functions from libraries 
+ *      - dynamic: linked at run-time
+ *      - static: linked at compile-time 
  * 
- * 
- * 
+
+ * Replacement of Main: 
+        smashed: 	Entry Address (e_entry): 0x004004e0
+        hello: 		Entry Address (e_entry): 0x004004f0
+        
+        Dump of assembler code for function _start:
+        ==>0x00000000004004f0 <+0>:     xor    %ebp,%ebp
+        
+        ∴asm 
+        00000000004005e0 <+0>:     xor    %ebp,%ebp
+        	//should become// 
+        00000000004005f0 <+0>:     xor    %ebp,%ebp
+
+
+
  * References: 
  * - https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/
  * - http://fluxius.handgrep.se/2011/10/20/the-art-of-elf-analysises-and-exploitations/
  * - http://www.cs.stevens.edu/~jschauma/810/elf.html
+ * - http://stackoverflow.com/questions/18633880/how-to-hack-an-elf-file-to-call-other-function-rather-main
+ * - https://jvns.ca/blog/2014/09/06/how-to-read-an-executable/
+ * - http://imgur.com/a/JEObT
+ * - http://stackoverflow.com/questions/8455135/gdb-changing-the-assembly-code-of-a-running-program
  * 
-/********************************************************************************/
+********************************************************************************/
  
 #include<stdio.h>
 
@@ -79,4 +101,3 @@ int main(void)
     printf("%d", testGlobal);
 
 }
-
