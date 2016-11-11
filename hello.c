@@ -73,7 +73,7 @@
         Dump of assembler code for function _start:
         ==>0x00000000004004f0 <+0>:     xor    %ebp,%ebp
         
-        ∴asm 
+        ∴
         00000000004005e0 <+0>:     xor    %ebp,%ebp
         	//should become// 
         00000000004005f0 <+0>:     xor    %ebp,%ebp
